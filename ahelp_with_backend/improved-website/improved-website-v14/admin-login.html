@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AHELP – Admin Login</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        /* Dark mode palette for admin pages */
+        .dark-mode {
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .dark-mode .bg-white,
+        .dark-mode .bg-gray-50,
+        .dark-mode .bg-gray-100 {
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+        .dark-mode .bg-gradient-to-r,
+        .dark-mode .bg-gradient-to-br,
+        .dark-mode .bg-gradient-to-l {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+        .dark-mode .text-gray-900,
+        .dark-mode .text-gray-800 {
+            color: #e2e8f0 !important;
+        }
+        .dark-mode .text-gray-600,
+        .dark-mode .text-gray-500 {
+            color: #94a3b8 !important;
+        }
+        .dark-mode .border-gray-300 {
+            border-color: #475569 !important;
+        }
+    </style>
+    <!-- Apply dark mode before page renders -->
+    <script>
+        try {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+            }
+        } catch (e) {}
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Navigation bar -->
+    <nav class="flex items-center justify-between px-6 py-4 bg-white shadow-md">
+        <div class="flex items-center space-x-2">
+            <a href="index.html" class="flex items-center space-x-2">
+                <img src="Help (6).png" alt="AHELP logo" class="h-28 w-auto">
+                <span class="text-xl font-extrabold bg-gradient-to-r from-purple-500 to-orange-400 bg-clip-text text-transparent">AHELP</span>
+            </a>
+        </div>
+        <div>
+            <a href="index.html" class="text-gray-600 hover:text-purple-600 text-sm">← Back to Home</a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-1 flex items-center justify-center px-4 py-12">
+        <div class="bg-white dark-mode:bg-gray-800 rounded-3xl shadow-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 dark-mode:text-white mb-2">Admin Login</h1>
+                <p class="text-gray-500 dark-mode:text-gray-400">Enter your admin credentials to continue</p>
+            </div>
+            <form id="admin-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark-mode:text-gray-300 mb-1">Email</label>
+                    <input id="admin-email" type="email" required 
+                           autofocus
+                           pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+                           class="w-full px-4 py-3 border border-gray-300 dark-mode:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" 
+                           placeholder="admin@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark-mode:text-gray-300 mb-1">Password</label>
+                    <div class="relative">
+                        <input id="admin-password" type="password" required minlength="8"
+                               class="w-full px-4 py-3 border border-gray-300 dark-mode:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all" 
+                               placeholder="••••••••">
+                        <button type="button" id="toggle-password" 
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="remember-me" class="rounded border-gray-300">
+                        <span class="ml-2 text-sm text-gray-600 dark-mode:text-gray-400">Remember me</span>
+                    </label>
+                </div>
+                <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-purple-500 to-orange-400 text-white py-3 rounded-xl font-semibold hover:from-purple-600 hover:to-orange-500 transition transform hover:scale-105">
+                    Sign In
+                </button>
+                <p id="admin-error" class="hidden text-center text-red-500 mt-4">Invalid credentials. Please try again.</p>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const MAX_LOGIN_ATTEMPTS = 5;
+        const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+        
+        function checkLoginAttempts() {
+            const attempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+            const lastAttempt = parseInt(localStorage.getItem('lastLoginAttempt') || '0');
+            
+            if (attempts >= MAX_LOGIN_ATTEMPTS && Date.now() - lastAttempt < LOCKOUT_DURATION) {
+                return false;
+            }
+            return true;
+        }
+
+        function updateLoginAttempts(success) {
+            if (success) {
+                localStorage.removeItem('loginAttempts');
+                localStorage.removeItem('lastLoginAttempt');
+            } else {
+                const attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
+                localStorage.setItem('loginAttempts', attempts);
+                localStorage.setItem('lastLoginAttempt', Date.now());
+            }
+        }
+
+        function checkPasswordStrength(password) {
+            const strengthEl = document.getElementById('password-strength');
+            if (password.length < 8) {
+                strengthEl.textContent = 'Password too short';
+                strengthEl.className = 'text-sm text-red-500';
+                return false;
+            }
+            const strength = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!strength.test(password)) {
+                strengthEl.textContent = 'Password needs uppercase, lowercase, number, and symbol';
+                strengthEl.className = 'text-sm text-yellow-500';
+                return false;
+            }
+            strengthEl.textContent = 'Password strength: Good';
+            strengthEl.className = 'text-sm text-green-500';
+            return true;
+        }
+
+        function setLoading(isLoading) {
+            const btn = document.getElementById('submit-btn');
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="inline-block animate-spin mr-2">↻</span> Signing in...';
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('admin-error');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        document.getElementById('admin-password').addEventListener('input', (e) => {
+            checkPasswordStrength(e.target.value);
+        });
+
+        // Add password toggle functionality
+        document.getElementById('toggle-password').addEventListener('click', () => {
+            const passwordInput = document.getElementById('admin-password');
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+        });
+
+        // Handle admin login using API integration
+        document.getElementById('admin-login-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            
+            if (!checkLoginAttempts()) {
+                document.getElementById('admin-error').textContent = 'Too many login attempts. Please try again later.';
+                document.getElementById('admin-error').classList.remove('hidden');
+                return;
+            }
+
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+            
+            if (!checkPasswordStrength(password)) {
+                return;
+            }
+
+            document.getElementById('admin-error').classList.add('hidden');
+            setLoading(true);
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ email, password, rememberMe }),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(response.status === 401 ? 'Invalid credentials' : 'Server error');
+                }
+
+                const result = await response.json();
+                updateLoginAttempts(true);
+                
+                const tokenExpiry = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000; // 7 days : 8 hours
+                
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                localStorage.setItem('adminEmail', result.email);
+                localStorage.setItem('adminAgency', result.agency || 'all');
+                localStorage.setItem('isSuperAdmin', result.agency === 'all' ? 'true' : 'false');
+                localStorage.setItem('adminToken', result.token);
+                localStorage.setItem('adminTokenExpires', Date.now() + tokenExpiry);
+
+                window.location.href = 'admin-dashboard.html';
+            } catch (err) {
+                updateLoginAttempts(false);
+                document.getElementById('admin-error').textContent = err.message;
+                document.getElementById('admin-error').classList.remove('hidden');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Clear expired sessions on load
+        window.addEventListener('load', () => {
+            const tokenExpires = parseInt(localStorage.getItem('adminTokenExpires') || '0');
+            if (Date.now() > tokenExpires) {
+                localStorage.removeItem('isAdminLoggedIn');
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminTokenExpires');
+            }
+        });
+    </script>
+</body>
+</html>
